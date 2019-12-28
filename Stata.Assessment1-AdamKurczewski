@@ -96,12 +96,36 @@ drop if dup>1
 ** Cleaning **
 **************
 
-* typically 'encode surveyor, g(surveyorid)' would quickly
-* produce what we need but becuase privacy is we will manually 
-* encode them as numbers to avoid any instance of the value label
-* ie surveyors name being retained
+* most effiient way but retains names in labels ie fails privacy objective
+* circle back if time allows
+* encode surveyor, g(surveyorid)
 
 gen surveyorid = 0
-replace surveyroid = 1 if surveyor == "Anna"
+replace surveyorid = 1 if surveyor == "Anna"
+replace surveyorid = 2 if surveyor == "Benjamin"
+replace surveyorid = 3 if surveyor == "Caroline"
+replace surveyorid = 4 if surveyor == "David"
+replace surveyorid = 5 if surveyor == "Grace"
+replace surveyorid = 6 if surveyor == "Jane"
+replace surveyorid = 7 if surveyor == "John"
+replace surveyorid = 8 if surveyor == "Joseph"
+replace surveyorid = 9 if surveyor == "Mary"
+replace surveyorid = 10 if surveyor == "Peter"
+replace surveyorid = 11 if surveyor == "Sam
+
+* replacing specific missing values
+
+label list yesno
+
+* use existing label values to recode variables appropriately
+replace burglaryyn = 99 if burglaryyn == -999
+replace burglaryyn = 97 if burglaryyn == -997
+
+replace vandalismyn = 99 if vandalismyn == -999
+replace vandalismyn= 97 if vandalismyn == -997
+
+replace trespassingyn = 99 if trespassingyn == -999
+replace trespassingyn= 97 if trespassingyn== -997
+
 
 
