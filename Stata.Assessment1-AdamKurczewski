@@ -7,5 +7,29 @@
 ***************
 
 clear
+
+/*
+Still familiarizing myself with the application of Github
+but if I was more comfrotable the current directory would be set
+to a github repository with the necessary data sets in it.
+Ideally all pathways would be non-specific, but for now it is
+necessary to alter unique pathways to match individual machines
+*/
+
+
+
 cd "C:\Users\kurczew2\Desktop\GPRL"
+
+*New Variables import
+import delim "C:\Users\kurczew2\Desktop\GPRL\Data\Part 1\New Variables.csv"
+
+*join to retain all observations, including those with no data for new variables
+joinby uniqueid using "C:\Users\kurczew2\Desktop\GPRL\Data\Part 1\Main Dataset.dta", unmatched(both)
+
+* inspect new obs dataset for any potential merging issues
+* use "C:\Users\kurczew2\Desktop\GPRL\Data\Part 1\New Observations.dta"
+
+append using "C:\Users\kurczew2\Desktop\GPRL\Data\Part 1\New Observations.dta"
+
+
 
