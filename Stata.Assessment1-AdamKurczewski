@@ -92,5 +92,16 @@ quietly by hhid educ sex : gen dup = cond(_N==1, 0, _n)
 drop if dup>1
 
 
+**************
+** Cleaning **
+**************
+
+* typically 'encode surveyor, g(surveyorid)' would quickly
+* produce what we need but becuase privacy is we will manually 
+* encode them as numbers to avoid any instance of the value label
+* ie surveyors name being retained
+
+gen surveyorid = 0
+replace surveyroid = 1 if surveyor == "Anna"
 
 
