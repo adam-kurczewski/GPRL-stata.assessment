@@ -111,10 +111,11 @@ replace surveyorid = 7 if surveyor == "John"
 replace surveyorid = 8 if surveyor == "Joseph"
 replace surveyorid = 9 if surveyor == "Mary"
 replace surveyorid = 10 if surveyor == "Peter"
-replace surveyorid = 11 if surveyor == "Sam
+replace surveyorid = 11 if surveyor == "Sam"
 
 * replacing specific missing values
 
+/*
 label list yesno
 
 * use existing label values to recode variables appropriately
@@ -126,6 +127,16 @@ replace vandalismyn= 97 if vandalismyn == -997
 
 replace trespassingyn = 99 if trespassingyn == -999
 replace trespassingyn= 97 if trespassingyn== -997
+*/
 
+*replace with designated extending missing values
+replace burglaryyn = .d if burglaryyn == -999
+replace burglaryyn = .r if burglaryyn == -997
+
+replace vandalismyn = .d if vandalismyn == -999
+replace vandalismyn= .r if vandalismyn == -997
+
+replace trespassingyn = .d if trespassingyn == -999
+replace trespassingyn= .r if trespassingyn== -997
 
 
