@@ -1,0 +1,31 @@
+**********************************************************************
+** GPRL Stata Assessment - Problem Set 2 - Adam Kurczewski 12/28/19 **
+**********************************************************************
+
+clear all
+cd "C:\Users\kurczew2\Desktop\GPRL"
+
+***************
+** Data Load **
+***************
+
+use "C:\Users\kurczew2\Desktop\GPRL\Data\Part 2\deceased-13.dta", clear
+tostring id_household, replace
+save deceased
+
+use "C:\Users\kurczew2\Desktop\GPRL\Data\Part 2\household-13.dta", clear
+save household
+
+use "C:\Users\kurczew2\Desktop\GPRL\Data\Part 2\children-13.dta", clear
+tostring id_household, replace
+save children
+
+* Note: things i need to learn/wish I knew - how to work with multiple
+* datasets in stata without needing to combine into one.  Comfortable with this in 
+* R but not here..
+
+* Variables lost are common variables
+append using deceased household
+
+
+
