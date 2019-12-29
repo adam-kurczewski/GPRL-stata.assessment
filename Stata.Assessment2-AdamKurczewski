@@ -27,11 +27,13 @@ save household
 * Variables lost are common variables
 joinby id_household using deceased
 save master
-**************
-** Describe **
-**************
 
-** Exploration **
+
+
+
+**********************
+** Part 1: Describe **
+**********************
 
 tab lived_unit
 label list irh15_u
@@ -60,6 +62,23 @@ the first year.  Note: there is the potential for "double counting" here so furt
 subsetting is necessary when describing households with deaths in the first year
 */
 
+* summary of physical hh characteristics as well as hh size and days infant lived
+* summarizes for households with an infant mortality occuring 1 year or less after birth
+summarize days_lived hh_size ib3.insurance i.drinking_water i.floor i.wall i.roof, sep(0) base
+
+* for reference
+label list yesno rkr04 rkr03 rkr02 rkr01
+
+
+
+
+
+*******************
+** Part 2: Story **
+*******************
+
+
+/*
 ** Comparing roof material across the two groups of interest
 
 tab roof if days_lived <= 28
@@ -67,6 +86,7 @@ tab roof if days_lived > 28
 
 graph hbar days_lived if days_lived <= 28, over(roof)
 graph hbar days_lived if days_lived > 28 & days_lived if days_lived <= 28, over(roof)
+*/
 
 *binary variable to ID households with an infant death in the first 28 days 
 *vs within the first year
@@ -78,7 +98,20 @@ label value early_death earlydeath
 * removing odd '7' category w/ 14 obs - not enough to worry about in this context
 * however, more formal analysis, it would be a good idea to track down why 7 was entered
 * and if it was a mistake, an encoding error, or missing data.
+* similar reasoning for drinking_water '9'
 drop if roof == 7
+drop if drinking_water == 9
+
+
+global controls hh_size ib3.insurance i.drinking_water i.floor i.wall i.roof
+
+reg days_lived $controls, cluster(id_household)
+
+reg days_lived $controls if days_lived <= 28, cluster(id_household)
+
+reg days_lived $controls if days_lived > 28, cluster(id_household)
+
+
 
 * learning on the fly - using catplot to create nicer categorical graph comparisons
 * resourse-https://www.ssc.wisc.edu/sscc/pubs/stata_bar_graphs.htm
