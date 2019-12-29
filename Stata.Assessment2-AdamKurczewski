@@ -3,20 +3,20 @@
 **********************************************************************
 
 clear all
-cd "C:\Users\kurczew2\Desktop\GPRL"
+cd "C:\Users\kurczew2\Desktop\GPRL\Data\Part 2"
 
 ***************
 ** Data Load **
 ***************
 
-use "C:\Users\kurczew2\Desktop\GPRL\Data\Part 2\deceased-13.dta", clear
+use "deceased-13.dta", clear
 tostring id_household, replace
 save deceased
 
-use "C:\Users\kurczew2\Desktop\GPRL\Data\Part 2\household-13.dta", clear
+use "household-13.dta", clear
 save household
 
-*use "C:\Users\kurczew2\Desktop\GPRL\Data\Part 2\children-13.dta", clear
+*use "children-13.dta", clear
 *tostring id_household, replace
 *save children
 
@@ -87,15 +87,16 @@ label value early_death earlydeath
 
 * learning on the fly - using catplot to create nicer categorical graph comparisons
 * resourse-https://www.ssc.wisc.edu/sscc/pubs/stata_bar_graphs.htm
+* visualization is the number one thing I struggled with in learning stata/adapting from R
 ssc install catplot
 
 catplot floor early_death, ///
 var1opts(label(labsize(small))) ///
-var2opts(label(labsize(small))) ///
+var2opts(label(labsize(small)))
 
 catplot wall early_death, ///
 var1opts(label(labsize(small))) ///
-var2opts(label(labsize(small))) ///
+var2opts(label(labsize(small)))
 
 * removing odd '7' category w/ 14 obs - not enough to worry about in this context
 * however, more formal analysis, it would be a good idea to track down why 7 was entered
@@ -114,12 +115,15 @@ reg days_lived $controls if days_lived <= 28, cluster(id_household)
 reg days_lived $controls if days_lived > 28, cluster(id_household)
 
 
+** Output 
+save stata.assessment2-output-AdamKurczewski.dta, replace
+
 **************************
 *** Concluding Remarks ***
 **************************
 
 /*
-primary resources utilized were the stata internal support documents.  
+primary resources utilized across both problem sets were the stata internal support documents.  
 I also utilized the statalist forum for guidance on specific analysis.
 Finally, I referenced 1 problem set completed as coursework as a requirement
 for my masters program and another set of code that I worked on as a member
