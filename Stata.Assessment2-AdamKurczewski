@@ -30,7 +30,6 @@ save master
 
 
 
-
 **********************
 ** Part 1: Describe **
 **********************
@@ -51,14 +50,14 @@ drop if days_lived > 365
 
 * comparing the duration of life for deaths occurring 28 days or less after birth
 * to those who died within one year
-kdensity days_lived if days_lived <= 28
-kdensity days_lived if days_lived > 28
+kdensity days_lived, xline(28)
+
+*kdensity days_lived if days_lived <= 28
+*kdensity days_lived if days_lived > 28
 
 /*
-Now that the data is subset to the observations of interest, all descriptive efforts
-will satisfy the prompt/facilitate the comparison between households that experienced 
-infant death within the first 28 days and households experiencing infant death within 
-the first year.  Note: there is the potential for "double counting" here so further
+Note: there is the potential for "double counting" here when comparing
+the two different timeframes for infanct mortality, so further
 subsetting is necessary when describing households with deaths in the first year
 */
 
@@ -71,29 +70,32 @@ label list yesno rkr04 rkr03 rkr02 rkr01
 
 
 
-
-
 *******************
 ** Part 2: Story **
 *******************
 
+* investigating simple correlations between variables of interest and days lived
+global controls hh_size ib3.insurance i.drinking_water i.floor i.wall i.roof
 
-/*
-** Comparing roof material across the two groups of interest
-
-tab roof if days_lived <= 28
-tab roof if days_lived > 28
-
-graph hbar days_lived if days_lived <= 28, over(roof)
-graph hbar days_lived if days_lived > 28 & days_lived if days_lived <= 28, over(roof)
-*/
 
 *binary variable to ID households with an infant death in the first 28 days 
 *vs within the first year
 gen early_death = 0
 replace early_death = 1 if days_lived > 28
-label define earlydeath 1 "Death in first year" 0 "Death within first 28 days"
+label define earlydeath 1 "After 28 days" 0 "Before 28 days"
 label value early_death earlydeath 
+
+* learning on the fly - using catplot to create nicer categorical graph comparisons
+* resourse-https://www.ssc.wisc.edu/sscc/pubs/stata_bar_graphs.htm
+ssc install catplot
+
+catplot floor early_death, ///
+var1opts(label(labsize(small))) ///
+var2opts(label(labsize(small))) ///
+
+catplot wall early_death, ///
+var1opts(label(labsize(small))) ///
+var2opts(label(labsize(small))) ///
 
 * removing odd '7' category w/ 14 obs - not enough to worry about in this context
 * however, more formal analysis, it would be a good idea to track down why 7 was entered
@@ -102,27 +104,29 @@ label value early_death earlydeath
 drop if roof == 7
 drop if drinking_water == 9
 
-
-global controls hh_size ib3.insurance i.drinking_water i.floor i.wall i.roof
-
+* regression analsysis
 reg days_lived $controls, cluster(id_household)
 
+* effects on "early death" mortality
 reg days_lived $controls if days_lived <= 28, cluster(id_household)
 
+*subset data to avoid double counting for "late death" 
 reg days_lived $controls if days_lived > 28, cluster(id_household)
 
 
+**************************
+*** Concluding Remarks ***
+**************************
 
-* learning on the fly - using catplot to create nicer categorical graph comparisons
-* resourse-https://www.ssc.wisc.edu/sscc/pubs/stata_bar_graphs.htm
-ssc install catplot
-
-catplot roof early_death, ///
-var1opts(label(labsize(small))) ///
-var2opts(label(labsize(small))) ///
-
-
-
+/*
+primary resources utilized were the stata internal support documents.  
+I also utilized the statalist forum for guidance on specific analysis.
+Finally, I referenced 1 problem set completed as coursework as a requirement
+for my masters program and another set of code that I worked on as a member
+of a data cleaning team.  The data is being used in my thesis research and was
+worked on by 2 other members of my cohort.  I have included both documents in 
+the github repository shared with the interviewers!
+*/
 
 
 
