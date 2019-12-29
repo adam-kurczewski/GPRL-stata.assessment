@@ -16,16 +16,80 @@ save deceased
 use "C:\Users\kurczew2\Desktop\GPRL\Data\Part 2\household-13.dta", clear
 save household
 
-use "C:\Users\kurczew2\Desktop\GPRL\Data\Part 2\children-13.dta", clear
-tostring id_household, replace
-save children
+*use "C:\Users\kurczew2\Desktop\GPRL\Data\Part 2\children-13.dta", clear
+*tostring id_household, replace
+*save children
 
 * Note: things i need to learn/wish I knew - how to work with multiple
 * datasets in stata without needing to combine into one.  Comfortable with this in 
 * R but not here..
 
 * Variables lost are common variables
-append using deceased household
+joinby id_household using deceased
+save master
+**************
+** Describe **
+**************
+
+** Exploration **
+
+tab lived_unit
+label list irh15_u
+
+* creating standardized metric to base length of life off of
+gen days_lived = .
+replace days_lived = lived*1440 if lived_unit == 1
+replace days_lived = lived*24 if lived_unit == 2
+replace days_lived = lived if lived_unit == 3
+replace days_lived = 30/lived if lived_unit == 4
+replace days_lived = 365/lived if lived_unit == 5
+
+*subsetting to only include households with a child who died before 1 year
+drop if days_lived > 365
+
+* comparing the duration of life for deaths occurring 28 days or less after birth
+* to those who died within one year
+kdensity days_lived if days_lived <= 28
+kdensity days_lived if days_lived > 28
+
+/*
+Now that the data is subset to the observations of interest, all descriptive efforts
+will satisfy the prompt/facilitate the comparison between households that experienced 
+infant death within the first 28 days and households experiencing infant death within 
+the first year.  Note: there is the potential for "double counting" here so further
+subsetting is necessary when describing households with deaths in the first year
+*/
+
+** Comparing roof material across the two groups of interest
+
+tab roof if days_lived <= 28
+tab roof if days_lived > 28
+
+graph hbar days_lived if days_lived <= 28, over(roof)
+graph hbar days_lived if days_lived > 28 & days_lived if days_lived <= 28, over(roof)
+
+*binary variable to ID households with an infant death in the first 28 days 
+*vs within the first year
+gen early_death = 0
+replace early_death = 1 if days_lived > 28
+label define earlydeath 1 "Death in first year" 0 "Death within first 28 days"
+label value early_death earlydeath 
+
+* removing odd '7' category w/ 14 obs - not enough to worry about in this context
+* however, more formal analysis, it would be a good idea to track down why 7 was entered
+* and if it was a mistake, an encoding error, or missing data.
+drop if roof == 7
+
+* learning on the fly - using catplot to create nicer categorical graph comparisons
+* resourse-https://www.ssc.wisc.edu/sscc/pubs/stata_bar_graphs.htm
+ssc install catplot
+
+catplot roof early_death, ///
+var1opts(label(labsize(small))) ///
+var2opts(label(labsize(small))) ///
+
+
+
 
 
 
