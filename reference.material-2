@@ -1,0 +1,231 @@
+/* 
+HISP Case Study - Impact Evaluation in Practice
+ACE 531 Problem sets
+*/
+
+*==================*
+* Load Data
+*==================*
+
+cd "C:\Users\kurczew2\Box\Academic\ACE531\HISP"
+
+use "evaluation.dta"
+
+*==================*
+* Problem Set 1
+*==================*
+
+*Q1 - reflexive comparison: ttest
+
+ttest health_expenditures if treatment_locality == 1, by(round)
+
+/*
+Q2 - is this reflexive comparison unbiased?
+
+By simply comparing health expenditures in the treatment area before and after the program was introduced, we cannot say 
+that the estimate is unbiased
+*/
+
+*Q3 - reflexive comparision: regress
+
+reg health_expenditures round if treatment_locality == 1
+
+*Q4 - add controls
+
+reg health_expenditures round educ_hh educ_sp dirtfloor hospital_distance if treatment_locality treatment_locality == 1
+
+*Q5 - ttest comparing enrolled vs unenrolled at endline in treatment areas
+
+ttest health_expenditures if treatment_locality == 1 & round ==1, by( enrolled )
+
+*Q7 - effect of enrollment in endline only: regression context
+reg health_expenditures enrolled if round == 1 & treatment_locality == 1
+
+*Q8 - with controls
+reg health_expenditures enrolled educ_hh educ_sp dirtfloor hospital_distance if round == 1 & treatment_locality == 1
+
+
+
+*==================*
+* Problem Set 2 - reg w/ clustering
+*==================*
+
+*create a list of control variables
+global controls poverty_index age_hh educ_hh educ_sp female_hh indigenous dirtfloor hospital_distance
+
+*Q1 - ttest to check for balance between outcome as well as control variables in baseline for only eligible households
+ttest health_expenditures if round == 0 & eligible == 1, by(treatment_locality)
+
+foreach x of global controls {
+	describe `x'
+	ttest `x' if round == 0, by(treatment_locality)	
+	}
+
+*Q2 - cross tab enrollment vs treatment locality of eligible households to verify compliance
+tab enrolled treatment_locality if eligible == 1
+
+*Q3 - Should we worry about spillover effects from treatment to control?
+*Yes, healthy individuals raise the health of those around them (in short)
+
+*Q4 - differnce in expenditures of eligible households in treatment area at baseline only
+ttest health_expenditures if round == 1 & eligible == 1, by(treatment_locality)
+
+*Q5 - type of estimator?
+* Earlier, we identified that everyone in C did not participate in the program
+* and everyone in T did.  Because we have full compliance, the ITT, ATEoT and ATE 
+* are the same.  We have an Average Treatment Effect of the program.
+
+*Q6 - regression context w clustered SE
+reg health_expenditures treatment_locality if round == 1 & eligible == 1, cluster(locality_identifier)
+
+*Q7 - regression context w clustered SE + controls
+reg health_expenditures treatment_locality $controls if round == 1 & eligible == 1, cluster(locality_identifier)
+
+*==================*
+* Problem Set 3 - IV
+*==================*
+
+*Q1 - at endline, evaluate compliance of T and C regardless of eligibility
+tab enrolled treatment_locality if round == 1
+
+*Q2 - effect of treamtent on health expenditures clustered at locality
+reg health_expenditures treatment_locality if round == 1, cluster(locality_identifier)
+/* Here, we do not make a distinction between enrollment and participation in the program.
+Comparing those who enrolled and who did not enroll results in an Average Treatment Effect estimate, assuming we have full compliance
+However, in the case of noncompliance (as we have here), failing to make the distinction between enrollment
+results in an Intent-to-Treat estimate, which is the difference between being in the treatment group
+and being in the control group regardless of exposure to the program.
+*/
+
+*Q3 - explain LATE and how Q2 can be used to obtain it
+/* LATE estimate represents the treatment effect of those units who complied with their original assignment.
+Will be larger than ITT, which underestimates an effect due to noncompliance
+
+Obtaining the LATE from the ITT can be done by dividing the ITT estimate by the share of 
+the treatment group that took up the program:
+
+	-6.4/0.59 = 10.7 = LATE
+*/
+	
+*Q4 - 2SLS: IV = treatment_locality ~ enrolled, endline, treatment_locality == weight
+ivregress 2sls health_expenditures (enrolled = treatment_locality) if round == 1 [weight = locality_identifier], first
+
+*Q5 - Why is treatment_locality a valid instrument?
+*treatment_locality is correlated with program participation but is not correlated with the outcome variable
+
+*Q6 - promotion campaign: crosstab for compliance
+tab enrolled_rp promotion_locality if round == 1
+
+*Q7 - promotion campaign: IV promotion_locality ~ enrolled_rp, endline, weighted
+ivregress 2sls health_expenditures (enrolled_rp = promotion_locality) if round == 1 [weight = locality_identifier], first
+
+*==================*
+* Problem Set 4 - RDD
+*==================*
+
+*Q1 - plot outcome against running variable to visualize effect of program 	
+rdplot health_expenditures poverty_index [if round == 1 & treatment_locality == 1], c(58)
+
+*Q2 - check the distribution of running variable to determine if manipulation is present
+kdensity poverty_index if round == 1, xline(58)
+
+*Q3 - sharp vs fuzzy
+rdplot enrolled poverty_index if round == 1 & treatment_locality ==1, c(58)
+
+*Q4 - rdrobust estimate
+rdrobust health_expenditures poverty_index if round == 1 & treatment_locality ==1, c(58)
+
+*Q5 - default kernel and bandwidth
+* triangle kernel and mserd BW or mean squared error
+* use help rdrobust to see variations of kernels and BW selectors
+
+            
+*==================*
+* Problem Set 5 - DiD
+*==================*
+
+keep if treatment_locality == 1
+
+*Q1 - bias in estimate that only uses endline comparison of treated/untreated?
+ttest health_expenditures if round == 1, by(enrolled)
+
+*Q2 -  ttest for difference in between baseline and endline for: enrolled, unenrolled, & diff. between the two
+ttest health_expenditures if enrolled == 0, by(round)
+ttest health_expenditures if enrolled == 1, by(round)
+
+*Q3 - what assumptions must be true for 2 to be an unbiased estimator?
+* parralel trends prior to the treatment
+* imporovement over one as it includes time effects that are not present when using on endline data
+
+*Q4 - DiD estimate - dummies for enrollment and time period (round) interaction with treatment and round, clustered SE
+*generate interaction variable
+gen DiD = enrolled * round
+
+reg health_expenditures enrolled round DiD, cl(locality_identifier)
+
+*Q5 - DiD w/ global controls'
+reg health_expenditures enrolled round DiD $controls, cl(locality_identifier)
+ 
+*Q6 - adding fixed effects
+
+* first tell stata that household is the obs. level and that time is round
+xtset household_identifier round
+
+xtreg health_expenditures DiD round, fe cl(locality_identifier)
+
+xtreg health_expenditures DiD round $controls, fe cl(locality_identifier)
+
+
+*==================*
+* Problem Set 6 - matching
+*==================*
+
+clear
+use evaluation.dta
+
+*Q1 - when is matching appropriate
+/*a.	Propensity score matching is an appropriate method to evaluate the impact 
+of a program when said program does not have clear assignment rules.  
+In the absence of assignment that allows for the use of other impact evaluation methods,
+a counterfactual can be estimated by matching those who have enrolled in the program with 
+those who have not based on unit characteristics
+*/
+
+*Q2 - reshaping the data such that each household has one observation
+* curently each household has 2 obs for each round.  
+
+reshape wide health_expenditures age_hh age_sp educ_hh educ_sp hospital, i(household_identifier) j(round)
+
+* wide takes the variables that are represented twice in the 'long' data and creates an additional
+* variable for them so each obs occurs only once but retains the multiple time periods of measurement
+
+*Q3 - densities of the propensity scores of the T and C groups to determine common support
+probit enrolled age_hh0 educ_hh0 educ_sp0 poverty_index female_hh indigenous dirtfloor hospital_distance 
+
+predict pscore
+
+kdensity pscore if enrolled == 1
+kdensity pscore if enrolled == 0
+
+*Q4 - randomize sorting of observations so that C group obs with the same pscore
+* are matched to a T observation randomly.
+
+*generate random number from uni distribution and sort by it
+set seed 100
+
+gen u = runiform()
+sort u
+
+*Q5 - matching estimate
+
+psmatch2 enrolled age_hh0 educ_hh0 educ_sp0 poverty_index female_hh indigenous dirtfloor hospital_distance, out(health_expenditures1)
+
+*Q6 - balance testing of T and C matches
+pstest
+*variables are well balanced
+
+*Q7 - add radius caliper matching at 0.05
+psmatch2 enrolled age_hh0 educ_hh0 educ_sp0 poverty_index female_hh indigenous dirtfloor hospital_distance, ///
+ out(health_expenditures1) cal(0.05)
+
+
